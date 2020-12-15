@@ -1,84 +1,43 @@
-#!/usr/bin/env groovy
 pipeline {
-
-    /*
-     * Run everything on an existing agent configured with a label 'docker'.
-     * This agent will need docker, git and a jdk installed at a minimum.
-     */
-    agent {
-        node {
-            label 'docker'
-        }
-    }
-
-    // using the Timestamper plugin we can add timestamps to the console log
-    options {
-        timestamps()
-    }
-
-    environment {
-        //Use Pipeline Utility Steps plugin to read information from pom.xml into env variables
-        IMAGE = readMavenPom().getArtifactId()
-        VERSION = readMavenPom().getVersion()
-    }
+    options {timestamps()}
+    agent none
 
     stages {
+        stage('Check scm') {
+            agent any
+            steps {
+                checkout scm
+            }
+        }
         stage('Build') {
             steps {
-                // using the Pipeline Maven plugin we can set maven configuration settings, publish test results, and annotate the Jenkins console
-                withMaven(options: [findbugsPublisher(), junitPublisher(ignoreAttachments: false)]) {
-                    sh 'mvn clean findbugs:findbugs package'
-                }
+                echo 'Building...${BUILD_NUMBER}'
+                echo 'Build completed'
+            }
+        }
+        stage('Test') {
+            agent { docker {image 'alpine'
+                      args'-u=\"root\"
+                     }
+               }
+            steps {
+                sh 'apk add -upate python3 py-pip'
+                sh 'pip install Flask'
+                sh ''pip install xmlrunner'
+                sh 'python3 app_tests.py'
             }
             post {
+                always {
+                    junit 'test-reports/*.xml'
+                }
                 success {
-                    // we only worry about archiving the jar file if the build steps are successful
-                    archiveArtifacts(artifacts: '**/target/*.jar', allowEmptyArchive: true)
+                    echo "Application testing successfully completed"
                 }
-            }
-        }
-
-        stage('Quality Analysis') {
-            parallel {
-                // run Sonar Scan and Integration tests in parallel. This syntax requires Declarative Pipeline 1.2 or higher
-                stage('Integration Test') {
-                    agent any  //run this stage on any available agent
-                    steps {
-                        echo 'Run integration tests here...'
-                    }
+                failure {
+                    echo "Oooops! Tests failed!"
                 }
-                stage('Sonar Scan') {
-                    agent none
-                    }
-                    environment {
-                        //use 'sonar' credentials scoped only to this stage
-                        SONAR = credentials('sonar')
-                    }
-                    steps {
-                        sh 'mvn sonar:sonar -Dsonar.login=$SONAR_PSW'
-                    }
-                }
+                
             }
-        }
-
-        stage('Build and Publish Image') {
-            when {
-                branch 'master'  //only run these steps on the master branch
-            }
-            steps {
-            
-                sh """
-          docker build -t ${IMAGE} .
-          docker tag ${IMAGE} ${IMAGE}:${VERSION}
-          docker push ${IMAGE}:${VERSION}
-        """
-            }
-        }
-    }
-
-    post {
-        failure {
-            echo "Oooops! Tests failed!"
         }
     }
 }
