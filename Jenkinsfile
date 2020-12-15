@@ -48,11 +48,7 @@ pipeline {
                     }
                 }
                 stage('Sonar Scan') {
-                    agent {docker {
-                            // we can use the same image and workspace as we did previously
-                            reuseNode true
-                            image 'maven:3.5.0-jdk-8'
-                        }
+                    agent none
                     }
                     environment {
                         //use 'sonar' credentials scoped only to this stage
