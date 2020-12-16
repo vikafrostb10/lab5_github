@@ -17,12 +17,13 @@ pipeline {
         }
         stage('Test') {
             agent { docker {image 'alpine'
-                      args'-u=\"root\"
-                     }
-               }
-            steps {
-                 withMaven(maven : 'maven') {
+                            args'-u=\"root\"
+                           }
+                  }
+           steps {
+                withMaven(maven : 'maven_3_5_0') {
                     sh 'mvn deploy'
+                }
             }
             post {
                 always {
@@ -35,6 +36,7 @@ pipeline {
                     echo "Oooops! Tests failed!"
                 }
             }
+
         stage('Pushing our image'){
             steps{
                 script {
@@ -45,4 +47,4 @@ pipeline {
                 }
             }
         }
-            
+                        
