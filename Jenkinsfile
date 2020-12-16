@@ -19,10 +19,8 @@ pipeline {
             agent any
                }
             steps {
-                sh 'apk add -upate python3 py-pip'
-                sh 'pip install Flask'
-                sh 'pip install xmlrunner'
-                sh 'python3 app_tests.py'
+                 withMaven(maven : 'maven') {
+                    sh 'mvn deploy'
             }
             post {
                 always {
