@@ -36,6 +36,7 @@ pipeline {
                     echo "Oooops! Tests failed!"
                 }
             }
+        }
 
         stage('Pushing our image'){
             steps{
@@ -47,4 +48,7 @@ pipeline {
                 }
             }
         }
+    }
+}
+
                         
