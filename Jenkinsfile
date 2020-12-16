@@ -16,7 +16,10 @@ pipeline {
             }
         }
         stage('Test') {
-            agent any
+            agent { docker {image 'alpine'
+                      args'-u=\"root\"
+                     }
+               }
             steps {
                  withMaven(maven : 'maven') {
                     sh 'mvn deploy'
@@ -42,6 +45,4 @@ pipeline {
                 }
             }
         }
-    }
-    }
-}
+            
