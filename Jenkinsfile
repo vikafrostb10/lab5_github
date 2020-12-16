@@ -17,7 +17,6 @@ pipeline {
         }
         stage('Test') {
             agent any
-               }
             steps {
                  withMaven(maven : 'maven') {
                     sh 'mvn deploy'
